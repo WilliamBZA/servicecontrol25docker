@@ -1,0 +1,19 @@
+FROM microsoft/mssql-server-windows-developer
+
+SHELL ["powershell"]
+
+# Create ServiceControl SQL DB
+RUN mkdir 'c:/sqldb'; \
+    SqlCMD -E -q 'ALTER LOGIN [sa] WITH PASSWORD = ''asdf1234!'';'; \
+    SqlCMD -E -q 'ALTER LOGIN [sa] ENABLE;'
+
+# Install ServiceControl
+RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+    Invoke-WebRequest "https://github.com/Particular/ServiceControl/releases/download/1.47.5/Particular.ServiceControl-1.47.5.exe" -OutFile "$env:TEMP\Particular.ServiceControl-1.47.5.exe" -UseBasicParsing; \
+    & "$env:TEMP\Particular.ServiceControl-1.47.5.exe" /quiet /LV* c:/install.log
+
+COPY startup.ps1 /
+
+COPY ProgressTracker c:/
+
+CMD .\startup -Verbose
